@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>熱壓吐司經營模擬器 V3 - 動態通膨版</title>
+    <style>
+        :root {
+            --primary-blue: #1e3a8a;
+            --accent-blue: #3b82f6;
+            --bg-dark: #0f172a;
+            --card-bg: #1e293b;
+            --text-light: #f8fafc;
+            --text-dim: #94a3b8;
+            --profit-green: #22c55e;
+            --house-gold: #fbbf24;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            background: var(--card-bg);
+            padding: 2.5rem;
+            border-radius: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+            width: 100%;
+            max-width: 800px;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 1.8rem;
+            margin-bottom: 2rem;
+            color: var(--accent-blue);
+            letter-spacing: -0.025em;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-section {
+            background: rgba(15, 23, 42, 0.5);
+            padding: 1.2rem;
+            border-radius: 16px;
+            border: 1px solid #334155;
+            text-align: center;
+        }
+
+        .stat-group {
+            margin-bottom: 1rem;
+        }
+
+        .stat-group:last-child {
+            margin-bottom: 0;
+            padding-top: 0.8rem;
+            border-top: 1px dashed #334155;
+        }
+
+        .stat-value {
+            display: block;
+            font-size: 1.5rem;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .revenue-text { color: var(--accent-blue); }
+        .cost-text { color: #f43f5e; }
+        .profit-text { color: var(--profit-green); }
+
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            background: rgba(255, 255, 255, 0.03);
+            padding: 2rem;
+            border-radius: 20px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            font-size: 0.9rem;
+            font-weight: 500;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            color: var(--text-dim);
+        }
+
+        label span {
+            color: var(--text-light);
+            font-weight: 700;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 4px;
+            background: #475569;
+            border-radius: 2px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            background: var(--accent-blue);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+        }
+
+        .v2-comparison {
+            margin-top: 2.5rem;
+            padding: 2rem;
+            background: rgba(251, 191, 36, 0.05);
+            border: 2px dashed rgba(251, 191, 36, 0.3);
+            border-radius: 20px;
+        }
+
+        .v2-title {
+            color: var(--house-gold);
+            font-size: 1.2rem;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .v2-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.5fr;
+            gap: 2rem;
+            align-items: start;
+        }
+
+        .comparison-result {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 1.2rem;
+            border-radius: 12px;
+        }
+
+        .result-item {
+            margin-bottom: 10px;
+        }
+
+        .result-label {
+            font-size: 0.8rem;
+            color: var(--text-dim);
+        }
+
+        .result-val {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: var(--house-gold);
+        }
+
+        .footer {
+            margin-top: 2rem;
+            text-align: center;
+            font-size: 0.8rem;
+            color: var(--text-dim);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🥪 週末吐司模擬營運系統 V3</h1>
+
+    <div class="dashboard">
+        <div class="stat-section">
+            <div class="stat-group">
+                <span class="stat-value revenue-text" id="rev-day">$0</span>
+                <span class="stat-label">當日營業額</span>
+            </div>
+            <div class="stat-group">
+                <span class="stat-value revenue-text" id="rev-month" style="font-size: 1.1rem;">$0</span>
+                <span class="stat-label">每月營業額</span>
+            </div>
+        </div>
+
+        <div class="stat-section">
+            <div class="stat-group">
+                <span class="stat-value cost-text" id="cost-day">$0</span>
+                <span class="stat-label">當日成本</span>
+            </div>
+            <div class="stat-group">
+                <span class="stat-value cost-text" id="cost-month" style="font-size: 1.1rem;">$0</span>
+                <span class="stat-label">每月成本</span>
+            </div>
+        </div>
+
+        <div class="stat-section" style="background: rgba(34, 197, 94, 0.1); border-color: rgba(34, 197, 94, 0.3);">
+            <div class="stat-group">
+                <span class="stat-value profit-text" id="profit-day">$0</span>
+                <span class="stat-label">當日利潤</span>
+            </div>
+            <div class="stat-group">
+                <span class="stat-value profit-text" id="profit-month" style="font-size: 1.1rem;">$0</span>
+                <span class="stat-label">每月利潤</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="controls">
+        <div class="control-group">
+            <label>每日營業時間 (HR) <span id="val-hours">4</span></label>
+            <input type="range" id="hours" min="0" max="8" value="4">
+        </div>
+        <div class="control-group">
+            <label>每週假日天數 (DAY) <span id="val-days">2</span></label>
+            <input type="range" id="days" min="1" max="2" value="2">
+        </div>
+        <div class="control-group">
+            <label>每小時來客數 (AVG) <span id="val-customers">4</span></label>
+            <input type="range" id="customers" min="0" max="20" value="4">
+        </div>
+        <div class="control-group">
+            <label>單份售價 (TWD) <span id="val-price">60</span></label>
+            <input type="range" id="price" min="50" max="70" value="60">
+        </div>
+    </div>
+
+    <div class="v2-comparison">
+        <div class="v2-title">😂 殘酷對比：吐司通膨 vs 房價複利</div>
+        <div class="v2-grid">
+            <div class="control-group">
+                <label>持有房產年數 <span id="val-years">10</span> 年</label>
+                <input type="range" id="house-years" min="0" max="20" value="10">
+                
+                <div style="margin-top: 20px; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 8px;">
+                    <div class="result-label">當前房產總價值：</div>
+                    <div class="result-val" id="current-house-value" style="color: var(--house-gold);">$30,000,000</div>
+                    <div style="font-size: 0.7rem; color: #71717a; margin-top: 5px;">*基礎 3000 萬，年增 3% 複利</div>
+                </div>
+
+                <div style="margin-top: 15px; font-size: 0.8rem; color: var(--text-dim);">
+                    <div>未來單份成本 (增2%): <span id="future-cost" style="color: #f43f5e;">$32.9</span></div>
+                    <div>未來單份售價 (增2%): <span id="future-price" style="color: var(--accent-blue);">$60</span></div>
+                </div>
+            </div>
+            
+            <div class="comparison-result">
+                <div class="result-item">
+                    <div class="result-label">房產平均每月增值利潤：</div>
+                    <div class="result-val" id="house-profit-monthly">$0</div>
+                </div>
+                <div class="result-item" style="border-top: 1px solid #3f3f46; padding-top: 8px;">
+                    <div class="result-label">第 N 年吐司每月利潤：</div>
+                    <div class="result-val" id="future-monthly-profit" style="color: var(--profit-green);">$0</div>
+                </div>
+                <div class="result-item" style="border-top: 1px solid #3f3f46; padding-top: 8px;">
+                    <div class="result-label">吐司利潤佔比：</div>
+                    <div class="result-val" id="comparison-ratio" style="color: #f87171;">0%</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        系統邏輯基於「最新小資版」食材成本：$32.9/份
+    </div>
+</div>
+
+<script>
+    const INITIAL_COST = 32.9;
+
+    function update() {
+        // --- 基礎參數 ---
+        const h = parseInt(document.getElementById('hours').value);
+        const d = parseInt(document.getElementById('days').value);
+        const c = parseInt(document.getElementById('customers').value);
+        const p = parseInt(document.getElementById('price').value);
+        const years = parseInt(document.getElementById('house-years').value);
+
+        document.getElementById('val-hours').innerText = h;
+        document.getElementById('val-days').innerText = d;
+        document.getElementById('val-customers').innerText = c;
+        document.getElementById('val-price').innerText = p;
+        document.getElementById('val-years').innerText = years;
+
+        // --- 1. 當前(第0年)儀表板計算 ---
+        const dailyQty = h * c;
+        const totalQtyMonth = dailyQty * d * 4;
+
+        document.getElementById('rev-day').innerText = '$' + Math.round(dailyQty * p).toLocaleString();
+        document.getElementById('cost-day').innerText = '$' + Math.round(dailyQty * INITIAL_COST).toLocaleString();
+        document.getElementById('profit-day').innerText = '$' + Math.round(dailyQty * (p - INITIAL_COST)).toLocaleString();
+
+        document.getElementById('rev-month').innerText = '$' + Math.round(totalQtyMonth * p).toLocaleString();
+        document.getElementById('cost-month').innerText = '$' + Math.round(totalQtyMonth * INITIAL_COST).toLocaleString();
+        document.getElementById('profit-month').innerText = '$' + Math.round(totalQtyMonth * (p - INITIAL_COST)).toLocaleString();
+
+        // --- 2. 房產與通膨動態計算 (V3) ---
+        const baseHousePrice = 30000000;
+        const houseGrowthRate = 0.03;
+        const inflationRate = 0.02;
+
+        // 房產複利 FV = P * (1 + r)^n
+        const currentHouseValue = baseHousePrice * Math.pow((1 + houseGrowthRate), years);
+        const totalHouseGrowth = currentHouseValue - baseHousePrice;
+        const avgMonthlyHouseProfit = years > 0 ? (totalHouseGrowth / (years * 12)) : 0;
+
+        // 工作通膨 (第 N 年後的成本與售價)
+        const futureUnitCost = INITIAL_COST * Math.pow((1 + inflationRate), years);
+        const futureUnitPrice = p * Math.pow((1 + inflationRate), years);
+        const futureMonthlyProfit = totalQtyMonth * (futureUnitPrice - futureUnitCost);
+
+        // 更新 UI
+        document.getElementById('current-house-value').innerText = '$' + Math.round(currentHouseValue).toLocaleString();
+        document.getElementById('future-cost').innerText = '$' + futureUnitCost.toFixed(1);
+        document.getElementById('future-price').innerText = '$' + futureUnitPrice.toFixed(1);
+        document.getElementById('house-profit-monthly').innerText = '$' + Math.round(avgMonthlyHouseProfit).toLocaleString();
+        document.getElementById('future-monthly-profit').innerText = '$' + Math.round(futureMonthlyProfit).toLocaleString();
+
+        // 比例計算
+        const ratio = avgMonthlyHouseProfit > 0 ? (futureMonthlyProfit / avgMonthlyHouseProfit * 100) : 0;
+        document.getElementById('comparison-ratio').innerText = ratio.toFixed(2) + '%';
+    }
+
+    // 監聽
+    ['hours', 'days', 'customers', 'price', 'house-years'].forEach(id => {
+        document.getElementById(id).addEventListener('input', update);
+    });
+
+    update();
+</script>
+
+</body>
+</html>
